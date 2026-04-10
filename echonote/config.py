@@ -5,7 +5,7 @@ from pathlib import Path
 import tomllib
 import tomli_w
 
-DEFAULT_CONFIG_DIR = Path.home() / ".meetfocus"
+DEFAULT_CONFIG_DIR = Path.home() / ".echonote"
 
 
 @dataclass

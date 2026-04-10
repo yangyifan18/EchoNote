@@ -1,5 +1,5 @@
 from pathlib import Path
-from meetfocus.writer import write_summary, write_transcript
+from echonote.writer import write_summary, write_transcript
 
 
 def test_write_summary_creates_markdown_file(tmp_path):

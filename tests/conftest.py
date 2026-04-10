@@ -14,6 +14,6 @@ def tmp_session_dir(tmp_path):
 @pytest.fixture
 def tmp_config_dir(tmp_path):
     """A temporary config directory for testing config load/save."""
-    config_dir = tmp_path / ".meetfocus"
+    config_dir = tmp_path / ".echonote"
     config_dir.mkdir()
     return config_dir

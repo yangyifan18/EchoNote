@@ -2,13 +2,13 @@ import json
 from unittest.mock import patch, MagicMock
 from typer.testing import CliRunner
 
-from meetfocus.cli import app
+from echonote.cli import app
 
 runner = CliRunner()
 
 
 def test_list_no_sessions(tmp_path):
-    with patch("meetfocus.cli._get_session_manager") as mock_mgr:
+    with patch("echonote.cli._get_session_manager") as mock_mgr:
         mock_mgr.return_value.list_sessions.return_value = []
         result = runner.invoke(app, ["list"])
         assert result.exit_code == 0
@@ -16,20 +16,20 @@ def test_list_no_sessions(tmp_path):
 
 
 def test_config_show(tmp_path):
-    with patch("meetfocus.cli._get_config") as mock_cfg:
-        from meetfocus.config import Config
+    with patch("echonote.cli._get_config") as mock_cfg:
+        from echonote.config import Config
         mock_cfg.return_value = Config()
         result = runner.invoke(app, ["config"])
         assert result.exit_code == 0
         assert "audio" in result.stdout.lower() or "whisper" in result.stdout.lower()
 
 
-@patch("meetfocus.cli._get_config")
-@patch("meetfocus.cli._get_session_manager")
-@patch("meetfocus.cli.run_summarize")
+@patch("echonote.cli._get_config")
+@patch("echonote.cli._get_session_manager")
+@patch("echonote.cli.run_summarize")
 def test_summarize_command(mock_summarize, mock_mgr, mock_cfg, monkeypatch):
-    from meetfocus.config import Config
-    from meetfocus.session import SessionMeta
+    from echonote.config import Config
+    from echonote.session import SessionMeta
     from pathlib import Path
     import tempfile
 

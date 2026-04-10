@@ -8,12 +8,12 @@ from unittest.mock import patch, MagicMock
 import numpy as np
 import soundfile as sf
 
-from meetfocus.config import Config
-from meetfocus.session import SessionManager
-from meetfocus.recorder import record_chunks
-from meetfocus.transcriber import transcriber_main
-from meetfocus.summarizer import summarize
-from meetfocus.writer import write_summary
+from echonote.config import Config
+from echonote.session import SessionManager
+from echonote.recorder import record_chunks
+from echonote.transcriber import transcriber_main
+from echonote.summarizer import summarize
+from echonote.writer import write_summary
 
 
 def _create_test_wav(path: Path, duration_s: float = 1.0, sample_rate: int = 16000):
@@ -22,7 +22,7 @@ def _create_test_wav(path: Path, duration_s: float = 1.0, sample_rate: int = 160
     sf.write(str(path), samples, sample_rate)
 
 
-@patch("meetfocus.transcriber.WhisperModel")
+@patch("echonote.transcriber.WhisperModel")
 def test_full_flow_session_to_summary(MockWhisper, tmp_path):
     """Test the full pipeline: session creation -> chunks -> transcription -> summary -> output."""
 
@@ -81,7 +81,7 @@ tags: [meeting, data-cleaning]
 ## 行动项
 - [ ] 调研格式统一化工具"""
 
-    with patch("meetfocus.summarizer.anthropic") as mock_anthropic:
+    with patch("echonote.summarizer.anthropic") as mock_anthropic:
         mock_client = MagicMock()
         mock_anthropic.Anthropic.return_value = mock_client
         mock_response = MagicMock()

@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from meetfocus.session import SessionManager, SessionMeta
+from echonote.session import SessionManager, SessionMeta
 
 
 def test_create_session(tmp_path):

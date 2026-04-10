@@ -4,7 +4,7 @@ import time
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-from meetfocus.recorder import record_chunks, find_device_index
+from echonote.recorder import record_chunks, find_device_index
 
 
 def _fake_input_stream(samplerate, channels, device, dtype, callback, stop_event=None):
@@ -31,7 +31,7 @@ def _fake_input_stream(samplerate, channels, device, dtype, callback, stop_event
     return FakeStream()
 
 
-@patch("meetfocus.recorder.sd")
+@patch("echonote.recorder.sd")
 def test_record_chunks_creates_wav_files(mock_sd, tmp_session_dir):
     """Recording should create .wav files in the chunks directory."""
     stop_event = mp.Event()
@@ -55,7 +55,7 @@ def test_record_chunks_creates_wav_files(mock_sd, tmp_session_dir):
     assert len(tmp_files) == 0
 
 
-@patch("meetfocus.recorder.sd")
+@patch("echonote.recorder.sd")
 def test_find_device_index_for_blackhole(mock_sd):
     mock_sd.query_devices.return_value = [
         {"name": "MacBook Pro Microphone", "max_input_channels": 1},
@@ -65,7 +65,7 @@ def test_find_device_index_for_blackhole(mock_sd):
     assert idx == 1
 
 
-@patch("meetfocus.recorder.sd")
+@patch("echonote.recorder.sd")
 def test_find_device_index_returns_none_when_not_found(mock_sd):
     mock_sd.query_devices.return_value = [
         {"name": "MacBook Pro Microphone", "max_input_channels": 1},

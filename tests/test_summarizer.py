@@ -1,5 +1,5 @@
 from unittest.mock import patch, MagicMock
-from meetfocus.summarizer import (
+from echonote.summarizer import (
     build_prompt,
     summarize,
     ClaudeProvider,
@@ -23,7 +23,7 @@ def test_build_prompt_includes_structural_instructions():
     assert "不要过度压缩" in prompt
 
 
-@patch("meetfocus.summarizer.anthropic")
+@patch("echonote.summarizer.anthropic")
 def test_claude_provider_calls_api(mock_anthropic):
     mock_client = MagicMock()
     mock_anthropic.Anthropic.return_value = mock_client
@@ -41,7 +41,7 @@ def test_claude_provider_calls_api(mock_anthropic):
     assert call_kwargs["messages"][0]["content"] == "测试 prompt"
 
 
-@patch("meetfocus.summarizer.openai")
+@patch("echonote.summarizer.openai")
 def test_openai_provider_calls_api(mock_openai):
     mock_client = MagicMock()
     mock_openai.OpenAI.return_value = mock_client
@@ -56,7 +56,7 @@ def test_openai_provider_calls_api(mock_openai):
     mock_client.chat.completions.create.assert_called_once()
 
 
-@patch("meetfocus.summarizer.anthropic")
+@patch("echonote.summarizer.anthropic")
 def test_summarize_end_to_end(mock_anthropic):
     mock_client = MagicMock()
     mock_anthropic.Anthropic.return_value = mock_client

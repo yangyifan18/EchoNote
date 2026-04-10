@@ -4,7 +4,7 @@ import multiprocessing as mp
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-from meetfocus.transcriber import transcribe_file, transcriber_main
+from echonote.transcriber import transcribe_file, transcriber_main
 
 
 def _create_fake_wav(path: Path):
@@ -12,7 +12,7 @@ def _create_fake_wav(path: Path):
     path.write_bytes(b"fake-audio-data")
 
 
-@patch("meetfocus.transcriber.WhisperModel")
+@patch("echonote.transcriber.WhisperModel")
 def test_transcribe_file(MockModel):
     """transcribe_file should return concatenated segment text."""
     mock_model = MockModel.return_value
@@ -27,7 +27,7 @@ def test_transcribe_file(MockModel):
     mock_model.transcribe.assert_called_once_with("/tmp/test.wav", language="zh", beam_size=5)
 
 
-@patch("meetfocus.transcriber.WhisperModel")
+@patch("echonote.transcriber.WhisperModel")
 def test_transcriber_processes_existing_chunks(MockModel, tmp_session_dir):
     """On startup, transcriber should process .wav files already in chunks/."""
     mock_model = MockModel.return_value
@@ -54,7 +54,7 @@ def test_transcriber_processes_existing_chunks(MockModel, tmp_session_dir):
     assert transcript.count("测试文本。") == 2
 
 
-@patch("meetfocus.transcriber.WhisperModel")
+@patch("echonote.transcriber.WhisperModel")
 def test_transcriber_ignores_tmp_files(MockModel, tmp_session_dir):
     """Transcriber should not process .wav.tmp files."""
     mock_model = MockModel.return_value

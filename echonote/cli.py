@@ -10,14 +10,14 @@ from pathlib import Path
 import typer
 from rich.console import Console
 
-from meetfocus.config import Config, load_config, save_config, DEFAULT_CONFIG_DIR
-from meetfocus.session import SessionManager
-from meetfocus.recorder import recorder_main
-from meetfocus.transcriber import transcriber_main
-from meetfocus.summarizer import summarize as run_summarize
-from meetfocus.writer import write_summary, write_transcript
+from echonote.config import Config, load_config, save_config, DEFAULT_CONFIG_DIR
+from echonote.session import SessionManager
+from echonote.recorder import recorder_main
+from echonote.transcriber import transcriber_main
+from echonote.summarizer import summarize as run_summarize
+from echonote.writer import write_summary, write_transcript
 
-app = typer.Typer(help="MeetingFocuser — record, transcribe, and summarize meetings.")
+app = typer.Typer(help="EchoNote — record, transcribe, and summarize meetings.")
 console = Console()
 
 
@@ -56,13 +56,13 @@ def start(
         target=recorder_main,
         args=(session.path, audio_source, config.audio.device,
               config.audio.chunk_duration, config.audio.sample_rate, stop_event),
-        name="meetfocus-recorder",
+        name="echonote-recorder",
     )
     trans_proc = mp.Process(
         target=transcriber_main,
         args=(session.path, config.whisper.model, config.whisper.device,
               config.whisper.language, stop_event),
-        name="meetfocus-transcriber",
+        name="echonote-transcriber",
     )
 
     rec_proc.start()
@@ -101,7 +101,7 @@ def start(
     else:
         console.print("[yellow]Done.[/yellow] No transcript generated (too short?)")
 
-    console.print(f"  Run [bold]meetfocus summarize[/bold] to generate AI summary.")
+    console.print(f"  Run [bold]echonote summarize[/bold] to generate AI summary.")
 
 
 @app.command()
@@ -215,7 +215,7 @@ def show(session_id: str = typer.Argument(None, help="Session ID (defaults to la
     if summary_path.exists():
         console.print("  Summary: [green]available[/green]")
     else:
-        console.print("  Summary: (none — run meetfocus summarize)")
+        console.print("  Summary: (none — run echonote summarize)")
 
 
 @app.command()

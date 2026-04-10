@@ -1,5 +1,5 @@
 [project]
-name = "meetfocus"
+name = "echonote"
 version = "0.1.0"
 description = "Meeting audio recorder, transcriber, and AI summarizer for Obsidian"
 requires-python = ">=3.11"
@@ -23,7 +23,7 @@ dev = [
 ]
 
 [project.scripts]
-meetfocus = "meetfocus.cli:run"
+echonote = "echonote.cli:run"
 
 [build-system]
 requires = ["hatchling"]

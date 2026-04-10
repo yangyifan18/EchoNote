@@ -1,6 +1,6 @@
 import tomli_w
 from pathlib import Path
-from meetfocus.config import (
+from echonote.config import (
     Config,
     AudioConfig,
     WhisperConfig,
