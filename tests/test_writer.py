@@ -1,5 +1,4 @@
-from pathlib import Path
-from echonote.writer import write_summary, write_transcript
+from echonote.writer import sanitize_title, write_summary, write_transcript
 
 
 def test_write_summary_creates_markdown_file(tmp_path):
@@ -71,3 +70,21 @@ def test_write_transcript(tmp_path):
     assert result_path.name == "2026-04-10-测试-transcript.md"
     content = result_path.read_text(encoding="utf-8")
     assert "转写文本" in content
+
+
+def test_sanitize_title_replaces_invalid_filename_characters():
+    assert sanitize_title("研究分享: Data/Infra? *notes*") == "研究分享- Data-Infra- -notes"
+
+
+def test_write_summary_sanitizes_filename(tmp_path):
+    result_path = write_summary(
+        summary="## 摘要\n内容",
+        vault_path=str(tmp_path / "vault"),
+        folder="Meetings",
+        date="2026-04-10",
+        title="Vision/Language: 2026?",
+        filename_format="{date}-{title}",
+    )
+
+    assert result_path.exists()
+    assert result_path.name == "2026-04-10-Vision-Language- 2026.md"

@@ -4,12 +4,12 @@
 
 **Your meetings, transcribed and understood — automatically.**
 
-Record, transcribe with local Whisper, summarize with frontier LLMs, and archive into Obsidian. All in one command.
+Record, transcribe with local Whisper, summarize with frontier LLMs, and archive into Obsidian. Start with local recording and transcription, then add summarization and export when you need them.
 
 ![Python](https://img.shields.io/badge/python-3.11+-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Whisper](https://img.shields.io/badge/whisper-large--v3-orange.svg)
-![Tests](https://img.shields.io/badge/tests-29%20passing-brightgreen.svg)
+![Tests](https://img.shields.io/badge/tests-40%20passing-brightgreen.svg)
 
 </div>
 
@@ -28,8 +28,10 @@ EchoNote runs silently alongside your meeting, captures everything, and hands yo
 - **Structured summaries, not bullet-point compression** — The LLM follows the speaker's original logic (by project, by topic, by timeline), preserves concrete details (numbers, tool names, paper references), and flags information not in the published work. Notes stay queryable for downstream AI agents.
 - **Obsidian-native output** — Markdown with YAML frontmatter, ready to drop into your vault. Tags, dates, speakers all wired up.
 - **Pluggable LLMs** — Claude and OpenAI out of the box. Swap providers with a config change.
+- **Hackable prompt templates** — Use the built-in academic or meeting templates, or point at your own prompt file.
 - **Mic or system audio** — Capture in-person talks via microphone, or online meetings via BlackHole virtual audio.
 - **Decoupled summarization** — Stop recording now, summarize later. Or re-summarize the same transcript with a different prompt.
+- **Recorder-first workflow** — Recording and transcription work before you configure any API key or Obsidian vault.
 
 ## Quick Start
 
@@ -40,7 +42,7 @@ cd EchoNote
 python -m venv .venv && source .venv/bin/activate
 pip install -e .
 
-# 2. Configure your vault + API key
+# 2. Configure summarization + vault export (optional for recording/transcription)
 mkdir -p ~/.echonote
 cat > ~/.echonote/config.toml <<EOF
 [output]
@@ -58,8 +60,8 @@ export ANTHROPIC_API_KEY=sk-ant-...
 # 3. Record a meeting
 echonote start            # Ctrl+C to stop
 
-# 4. Generate the summary
-echonote summarize        # Writes to your Obsidian vault
+# 4. Generate the summary later
+echonote summarize        # Saves to session dir; exports to Obsidian if configured
 ```
 
 ## How It Works
@@ -110,9 +112,11 @@ echonote summarize        # Writes to your Obsidian vault
 ## Commands
 
 ```
-echonote start [--system]    Start recording (Ctrl+C to stop)
-                             --system  captures system audio via BlackHole
-echonote stop                Stop recording (for daemon mode)
+echonote start [--system|--mic]
+                             Start recording (Ctrl+C to stop)
+                             Defaults to [audio].source in config.toml
+                             --system captures system audio via BlackHole
+                             --mic forces microphone input for this run
 echonote summarize [id]      Generate AI summary → Obsidian (default: latest session)
 echonote list                List all recorded sessions
 echonote show [id]           Show session details, transcript length, summary status
@@ -179,12 +183,15 @@ device = "auto"              # "cpu" | "cuda" | "auto" (no MPS — CTranslate2 l
 provider = "claude"          # "claude" | "openai"
 model = "claude-sonnet-4-6"
 api_key_env = "ANTHROPIC_API_KEY"
+prompt_template = "academic" # "academic" | "meeting"
+prompt_path = ""             # optional path to a custom prompt file
+max_chars_per_chunk = 12000  # split long transcripts before summarizing
 
 [output]
 obsidian_vault = "~/Documents/ObsidianVault"
 folder = "Meetings"
 keep_transcript = true       # save raw transcript alongside summary
-keep_audio = false           # discard .wav chunks after transcription
+keep_audio = false           # delete raw .wav chunks after transcription completes
 filename_format = "{date}-{title}"
 
 [sessions]
@@ -220,7 +227,7 @@ Two reasons:
 
 ```bash
 pip install -e ".[dev]"
-pytest -v                    # 29 tests
+pytest -v                    # 40 tests
 ```
 
 Project structure:
@@ -239,7 +246,6 @@ echonote/
 
 - [ ] Live scrolling transcript display during recording
 - [ ] Speaker diarization (who said what)
-- [ ] Custom prompt templates per meeting type
 - [ ] Export to other knowledge bases (Logseq, Notion, plain markdown)
 - [ ] Incremental summarization (every N minutes)
 - [ ] Windows support

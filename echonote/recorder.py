@@ -4,7 +4,6 @@ import os
 import queue
 from pathlib import Path
 
-import numpy as np
 import sounddevice as sd
 import soundfile as sf
 

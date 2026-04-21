@@ -4,8 +4,8 @@ import time
 from pathlib import Path
 
 from faster_whisper import WhisperModel
+from watchdog.events import FileCreatedEvent, PatternMatchingEventHandler
 from watchdog.observers import Observer
-from watchdog.events import PatternMatchingEventHandler, FileCreatedEvent
 
 
 def transcribe_file(model: WhisperModel, audio_path: str, language: str = "zh") -> str:
@@ -17,7 +17,14 @@ def transcribe_file(model: WhisperModel, audio_path: str, language: str = "zh") 
 class _ChunkHandler(PatternMatchingEventHandler):
     """Watchdog handler that transcribes new .wav chunks on creation."""
 
-    def __init__(self, model: WhisperModel, language: str, transcript_path: Path, processed: set):
+    def __init__(
+        self,
+        model: WhisperModel,
+        language: str,
+        transcript_path: Path,
+        processed: set,
+        keep_audio: bool,
+    ):
         super().__init__(
             patterns=["*.wav"],
             ignore_patterns=["*.wav.tmp"],
@@ -27,15 +34,20 @@ class _ChunkHandler(PatternMatchingEventHandler):
         self.language = language
         self.transcript_path = transcript_path
         self.processed = processed
+        self.keep_audio = keep_audio
 
     def on_created(self, event: FileCreatedEvent) -> None:
         path = Path(event.src_path)
         if path.name in self.processed:
             return
+        _process_chunk(
+            model=self.model,
+            chunk_path=path,
+            language=self.language,
+            transcript_path=self.transcript_path,
+            keep_audio=self.keep_audio,
+        )
         self.processed.add(path.name)
-        text = transcribe_file(self.model, str(path), self.language)
-        with open(self.transcript_path, "a", encoding="utf-8") as f:
-            f.write(text + "\n")
 
 
 def _has_unprocessed(chunks_dir: Path, processed: set) -> bool:
@@ -46,12 +58,28 @@ def _has_unprocessed(chunks_dir: Path, processed: set) -> bool:
     return False
 
 
+def _process_chunk(
+    model: WhisperModel,
+    chunk_path: Path,
+    language: str,
+    transcript_path: Path,
+    keep_audio: bool,
+) -> None:
+    """Transcribe one chunk, append it to the transcript, and optionally delete audio."""
+    text = transcribe_file(model, str(chunk_path), language)
+    with open(transcript_path, "a", encoding="utf-8") as f:
+        f.write(text + "\n")
+    if not keep_audio and chunk_path.exists():
+        chunk_path.unlink()
+
+
 def transcriber_main(
     session_dir: Path,
     whisper_model: str,
     whisper_device: str,
     whisper_language: str,
     stop_event,
+    keep_audio: bool = False,
 ):
     """Entry point for the transcriber subprocess."""
     model = WhisperModel(whisper_model, device=whisper_device, compute_type="auto")
@@ -63,13 +91,17 @@ def transcriber_main(
 
     # Process any existing chunks (crash recovery)
     for existing in sorted(chunks_dir.glob("*.wav")):
+        _process_chunk(
+            model=model,
+            chunk_path=existing,
+            language=whisper_language,
+            transcript_path=transcript_path,
+            keep_audio=keep_audio,
+        )
         processed.add(existing.name)
-        text = transcribe_file(model, str(existing), whisper_language)
-        with open(transcript_path, "a", encoding="utf-8") as f:
-            f.write(text + "\n")
 
     # Watch for new chunks
-    handler = _ChunkHandler(model, whisper_language, transcript_path, processed)
+    handler = _ChunkHandler(model, whisper_language, transcript_path, processed, keep_audio)
     observer = Observer()
     observer.schedule(handler, str(chunks_dir), recursive=False)
     observer.start()
@@ -82,10 +114,14 @@ def transcriber_main(
         if _has_unprocessed(chunks_dir, processed):
             for p in sorted(chunks_dir.glob("*.wav")):
                 if p.name not in processed:
+                    _process_chunk(
+                        model=model,
+                        chunk_path=p,
+                        language=whisper_language,
+                        transcript_path=transcript_path,
+                        keep_audio=keep_audio,
+                    )
                     processed.add(p.name)
-                    text = transcribe_file(model, str(p), whisper_language)
-                    with open(transcript_path, "a", encoding="utf-8") as f:
-                        f.write(text + "\n")
     finally:
         observer.stop()
         observer.join()

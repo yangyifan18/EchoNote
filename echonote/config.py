@@ -28,6 +28,9 @@ class LLMConfig:
     provider: str = "claude"
     model: str = "claude-sonnet-4-6"
     api_key_env: str = "ANTHROPIC_API_KEY"
+    prompt_template: str = "academic"
+    prompt_path: str = ""
+    max_chars_per_chunk: int = 12000
 
 
 @dataclass

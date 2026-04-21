@@ -1,5 +1,3 @@
-import os
-import time
 import multiprocessing as mp
 from pathlib import Path
 from unittest.mock import patch, MagicMock
@@ -76,3 +74,53 @@ def test_transcriber_ignores_tmp_files(MockModel, tmp_session_dir):
     assert not (tmp_session_dir / "transcript.txt").exists() or \
         (tmp_session_dir / "transcript.txt").read_text() == ""
     mock_model.transcribe.assert_not_called()
+
+
+@patch("echonote.transcriber.WhisperModel")
+def test_transcriber_deletes_audio_when_keep_audio_false(MockModel, tmp_session_dir):
+    mock_model = MockModel.return_value
+    seg = MagicMock()
+    seg.text = "测试文本。"
+    mock_model.transcribe.return_value = ([seg], MagicMock())
+
+    chunk_path = tmp_session_dir / "chunks" / "chunk_0000.wav"
+    _create_fake_wav(chunk_path)
+
+    stop_event = mp.Event()
+    stop_event.set()
+
+    transcriber_main(
+        session_dir=tmp_session_dir,
+        whisper_model="tiny",
+        whisper_device="cpu",
+        whisper_language="zh",
+        stop_event=stop_event,
+        keep_audio=False,
+    )
+
+    assert not chunk_path.exists()
+
+
+@patch("echonote.transcriber.WhisperModel")
+def test_transcriber_keeps_audio_when_keep_audio_true(MockModel, tmp_session_dir):
+    mock_model = MockModel.return_value
+    seg = MagicMock()
+    seg.text = "测试文本。"
+    mock_model.transcribe.return_value = ([seg], MagicMock())
+
+    chunk_path = tmp_session_dir / "chunks" / "chunk_0000.wav"
+    _create_fake_wav(chunk_path)
+
+    stop_event = mp.Event()
+    stop_event.set()
+
+    transcriber_main(
+        session_dir=tmp_session_dir,
+        whisper_model="tiny",
+        whisper_device="cpu",
+        whisper_language="zh",
+        stop_event=stop_event,
+        keep_audio=True,
+    )
+
+    assert chunk_path.exists()

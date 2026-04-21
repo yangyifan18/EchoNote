@@ -10,11 +10,11 @@ from pathlib import Path
 import typer
 from rich.console import Console
 
-from echonote.config import Config, load_config, save_config, DEFAULT_CONFIG_DIR
-from echonote.session import SessionManager
+from echonote.config import Config, DEFAULT_CONFIG_DIR, load_config
 from echonote.recorder import recorder_main
-from echonote.transcriber import transcriber_main
+from echonote.session import SessionManager
 from echonote.summarizer import summarize as run_summarize
+from echonote.transcriber import transcriber_main
 from echonote.writer import write_summary, write_transcript
 
 app = typer.Typer(help="EchoNote — record, transcribe, and summarize meetings.")
@@ -30,23 +30,30 @@ def _get_session_manager() -> SessionManager:
     return SessionManager(sessions_dir=Path(config.sessions.dir).expanduser())
 
 
+def _resolve_audio_source(system_flag: bool | None, configured_source: str) -> str:
+    """Resolve audio source from CLI flags, falling back to config."""
+    if system_flag is None:
+        return "system" if configured_source == "system" else "mic"
+    return "system" if system_flag else "mic"
+
+
 @app.command()
 def start(
-    system: bool = typer.Option(False, "--system", help="Capture system audio via BlackHole"),
+    system: bool | None = typer.Option(
+        None,
+        "--system/--mic",
+        help="Override the configured audio source for this session.",
+    ),
 ):
     """Start recording and transcribing a meeting."""
     config = _get_config()
 
-    if not config.output.obsidian_vault:
-        console.print("[red]Error:[/red] Obsidian vault path not configured.")
-        raise typer.Exit(1)
-
     mgr = _get_session_manager()
-    audio_source = "system" if system else "mic"
+    audio_source = _resolve_audio_source(system, config.audio.source)
     session = mgr.create(audio_source=audio_source)
 
     console.print(f"[green]Recording started[/green] (session: {session.session_id})")
-    console.print(f"  Audio source: {'System (BlackHole)' if system else 'Microphone'}")
+    console.print(f"  Audio source: {'System (BlackHole)' if audio_source == 'system' else 'Microphone'}")
     console.print(f"  Session dir: {session.path}")
     console.print("  Press Ctrl+C to stop.\n")
 
@@ -61,7 +68,7 @@ def start(
     trans_proc = mp.Process(
         target=transcriber_main,
         args=(session.path, config.whisper.model, config.whisper.device,
-              config.whisper.language, stop_event),
+              config.whisper.language, stop_event, config.output.keep_audio),
         name="echonote-transcriber",
     )
 
@@ -139,6 +146,9 @@ def summarize(
         provider_name=config.llm.provider,
         model=config.llm.model,
         api_key=api_key,
+        template_name=config.llm.prompt_template,
+        prompt_path=config.llm.prompt_path,
+        max_chars_per_chunk=config.llm.max_chars_per_chunk,
     )
 
     (session.path / "summary.md").write_text(summary, encoding="utf-8")
@@ -167,7 +177,7 @@ def summarize(
             )
             console.print(f"[green]Transcript written to:[/green] {t_path}")
     else:
-        console.print("[yellow]No Obsidian vault configured.[/yellow]")
+        console.print(f"[yellow]No Obsidian vault configured.[/yellow] Session summary saved at {session.path / 'summary.md'}")
 
     console.print("[green]Done![/green]")
 
@@ -236,6 +246,9 @@ def config():
     console.print(f"  provider = {cfg.llm.provider}")
     console.print(f"  model = {cfg.llm.model}")
     console.print(f"  api_key_env = {cfg.llm.api_key_env}")
+    console.print(f"  prompt_template = {cfg.llm.prompt_template}")
+    console.print(f"  prompt_path = {cfg.llm.prompt_path}")
+    console.print(f"  max_chars_per_chunk = {cfg.llm.max_chars_per_chunk}")
     console.print(f"\n[output]")
     console.print(f"  obsidian_vault = {cfg.output.obsidian_vault}")
     console.print(f"  folder = {cfg.output.folder}")
