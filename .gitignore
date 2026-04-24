@@ -6,3 +6,6 @@ build/
 .venv/
 .env
 .superpowers/
+
+# Obsidian vault symlink (content lives in ~/Research)
+obsidian-docs.md
